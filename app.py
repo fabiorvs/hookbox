@@ -165,7 +165,9 @@ def dashboard():
         FROM endpoints e LEFT JOIN requests r ON r.endpoint_id=e.id
         WHERE e.user_id=? GROUP BY e.id ORDER BY e.id DESC
     """, (session["user_id"],)).fetchall()
-    return render_template("dashboard.html", endpoints=endpoints, base_url=os.getenv("PUBLIC_BASE_URL", request.host_url.rstrip("/")))
+    latest_activity = max((item["last_request"] for item in endpoints if item["last_request"]), default=None)
+    return render_template("dashboard.html", endpoints=endpoints, latest_activity=latest_activity,
+                           base_url=os.getenv("PUBLIC_BASE_URL", request.host_url.rstrip("/")))
 
 
 @app.post("/endpoints")

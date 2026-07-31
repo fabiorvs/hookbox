@@ -32,6 +32,10 @@ class HookboxTest(unittest.TestCase):
         response = self.client.post("/endpoints", data={"csrf": self.csrf(), "name": "Pagamentos"})
         self.assertEqual(response.status_code, 302)
         endpoint_id = int(response.location.rstrip("/").split("/")[-1])
+        dashboard = self.client.get("/painel")
+        self.assertIn(b"Seus endpoints", dashboard.data)
+        self.assertIn(b"TOTAL DE REQUISI", dashboard.data)
+        self.assertIn(b'data-endpoint-search="Pagamentos', dashboard.data)
         with self.module.app.app_context():
             endpoint = self.module.db().execute("SELECT * FROM endpoints WHERE id=?", (endpoint_id,)).fetchone()
         captured = self.client.post(f"/hook/{endpoint['uuid']}/events?source=test", json={"paid": True}, headers={"X-Test": "yes"})

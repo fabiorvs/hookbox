@@ -19,6 +19,11 @@ document.getElementById('request-filter')?.addEventListener('input', (event) => 
   document.querySelectorAll('.request-row').forEach(row => row.hidden = !row.dataset.search.toLowerCase().includes(term));
 });
 
+document.getElementById('endpoint-filter')?.addEventListener('input', (event) => {
+  const term = event.target.value.trim().toLowerCase();
+  document.querySelectorAll('[data-endpoint-search]').forEach(card => card.hidden = !card.dataset.endpointSearch.toLowerCase().includes(term));
+});
+
 const layout = document.querySelector('[data-endpoint]');
 if (layout) {
   let newest = Math.max(0, ...[...document.querySelectorAll('.request-row')].map(a => Number(new URL(a.href).searchParams.get('request'))));

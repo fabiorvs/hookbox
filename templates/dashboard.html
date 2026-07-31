@@ -1,13 +1,32 @@
-{% extends 'base.html' %}{% block title %}Painel · Hookbox{% endblock %}
+{% extends 'base.html' %}{% block title %}Endpoints · Hookbox{% endblock %}{% block body_class %}dashboard-page{% endblock %}
 {% block content %}
-<div class="page-head"><div><span class="eyebrow">SEU ESPAÇO</span><h1>Endpoints</h1><p>Crie uma URL e veja cada requisição chegando em tempo real.</p></div>
-  <form class="create-form" method="post" action="{{ url_for('create_endpoint') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input name="name" required maxlength="80" placeholder="Ex: Pagamentos Stripe"><button class="btn primary">+ Novo endpoint</button></form>
-</div>
-{% if endpoints %}<div class="endpoint-grid">
-{% for item in endpoints %}<a class="card endpoint-card" href="{{ url_for('endpoint_detail', endpoint_id=item.id) }}">
-  <div class="card-line"><span class="status-dot"></span><span class="muted">ATIVO</span><span class="arrow">→</span></div><h3>{{ item.name }}</h3>
-  <code>{{ base_url }}/hook/{{ item.uuid }}</code><div class="stats"><span><strong>{{ item.request_count }}</strong> requisições</span><span>{{ item.last_request[:16].replace('T',' ') if item.last_request else 'Aguardando a primeira' }}</span></div>
-</a>{% endfor %}</div>
-{% else %}<div class="empty card"><div class="empty-icon">↯</div><h2>Seu primeiro webhook começa aqui</h2><p>Dê um nome acima e uma URL exclusiva será gerada instantaneamente.</p></div>{% endif %}
-{% endblock %}
+<section class="dashboard-hero">
+  <div><span class="eyebrow">VISÃO GERAL</span><h1>Seus endpoints</h1><p>Crie, monitore e inspecione seus webhooks em um só lugar.</p></div>
+  <button class="btn primary new-endpoint" data-toggle="create-endpoint">+ Novo endpoint</button>
+</section>
 
+<section id="create-endpoint" class="create-drawer card hidden">
+  <form method="post" action="{{ url_for('create_endpoint') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <div><span class="eyebrow">NOVO WEBHOOK</span><h2>Como deseja identificar este endpoint?</h2><p>Uma URL exclusiva com UUID será gerada automaticamente.</p></div>
+    <div class="create-controls"><input name="name" required maxlength="80" autofocus placeholder="Ex: Pagamentos Stripe"><button class="btn primary">Criar endpoint</button><button type="button" class="btn dark" data-toggle="create-endpoint">Cancelar</button></div>
+  </form>
+</section>
+
+<div class="dashboard-stats">
+  <div><span>ENDPOINTS ATIVOS</span><strong>{{ endpoints|length }}</strong><i class="stat-green">● Online</i></div>
+  <div><span>TOTAL DE REQUISIÇÕES</span><strong>{{ endpoints|sum(attribute='request_count') }}</strong><i>Todos os endpoints</i></div>
+  <div><span>ÚLTIMA ATIVIDADE</span><strong class="stat-date">{{ latest_activity[11:16] if latest_activity else '—' }}</strong><i>{{ latest_activity[:10] if latest_activity else 'Aguardando eventos' }}</i></div>
+</div>
+
+<section class="endpoint-section">
+  <header><div><h2>Endpoints <span>{{ endpoints|length }}</span></h2><p>URLs públicas prontas para receber qualquer requisição HTTP.</p></div>{% if endpoints %}<label class="endpoint-search">⌕ <input id="endpoint-filter" placeholder="Buscar endpoint…" autocomplete="off"></label>{% endif %}</header>
+  {% if endpoints %}<div class="modern-endpoint-grid">
+  {% for item in endpoints %}<a class="modern-endpoint-card" href="{{ url_for('endpoint_detail', endpoint_id=item.id) }}" data-endpoint-search="{{ item.name }} {{ item.uuid }}">
+    <div class="endpoint-card-top"><span class="active-label"><i></i> ATIVO</span><span class="open-arrow">↗</span></div>
+    <div class="endpoint-identity"><span class="endpoint-icon">↯</span><div><h3>{{ item.name }}</h3><p>{{ item.request_count }} {{ 'requisição' if item.request_count == 1 else 'requisições' }}</p></div></div>
+    <div class="endpoint-address"><b>POST</b><code>{{ base_url }}/hook/{{ item.uuid }}</code><button type="button" data-copy="{{ base_url }}/hook/{{ item.uuid }}" aria-label="Copiar URL">⧉</button></div>
+    <footer><span><i></i> Capturando eventos</span><time>{% if item.last_request %}Última: {{ item.last_request[:16].replace('T',' ') }}{% else %}Nenhuma requisição{% endif %}</time></footer>
+  </a>{% endfor %}</div>
+  {% else %}<div class="dashboard-empty"><div class="empty-rings"><span>↯</span></div><span class="eyebrow">NENHUM ENDPOINT</span><h2>Crie seu primeiro webhook</h2><p>Gere uma URL em segundos e acompanhe cada requisição em tempo real.</p><button class="btn primary" data-toggle="create-endpoint">+ Criar endpoint</button></div>{% endif %}
+</section>
+{% endblock %}
