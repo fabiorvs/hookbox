@@ -38,6 +38,30 @@ python3 -m venv .venv
 
 O banco é criado automaticamente em `instance/webhook-box.db`. O limite padrão por requisição é 1 MiB e pode ser alterado em `MAX_REQUEST_BYTES`.
 
+## Segurança, limites e retenção
+
+O primeiro usuário cadastrado se torna administrador. Depois dele, o administrador pode consultar e bloquear usuários em `/admin`. Para fechar novos cadastros, defina `ALLOW_REGISTRATION=false`.
+
+As principais opções do `.env` são:
+
+- `MAX_REQUESTS_PER_ENDPOINT`: quantidade máxima mantida por endpoint;
+- `MAX_ENDPOINTS_PER_USER`: quota de endpoints ativos por usuário;
+- `RETENTION_DAYS`: expiração automática das requisições;
+- `SESSION_COOKIE_SECURE=true`: obrigatório quando o site usa HTTPS;
+- `MAX_REQUEST_BYTES`: tamanho máximo aceito por payload.
+
+Endpoints podem exigir o header `X-Hookbox-Secret`, simular atraso e respostas de erro, ser arquivados ou ter o UUID regenerado. O reenvio aceita apenas destinos públicos HTTP/HTTPS para reduzir o risco de SSRF.
+
+## Backup
+
+Com o contêiner em execução:
+
+```bash
+./scripts/backup.sh
+```
+
+O backup consistente do SQLite será salvo em `backups/`. Para restaurar, pare o serviço, preserve uma cópia do banco atual e substitua `/data/webhook-box.db` pelo arquivo escolhido.
+
 ## Teste rápido
 
 Após criar um endpoint, use a URL exibida no painel:

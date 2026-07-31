@@ -1,6 +1,8 @@
 document.addEventListener('click', async (event) => {
   const copy = event.target.closest('[data-copy]');
   if (copy) {
+    event.preventDefault();
+    event.stopPropagation();
     await navigator.clipboard.writeText(copy.dataset.copy);
     const old = copy.textContent; copy.textContent = 'Copiado!';
     setTimeout(() => copy.textContent = old, 1400);
@@ -24,15 +26,16 @@ document.getElementById('endpoint-filter')?.addEventListener('input', (event) =>
   document.querySelectorAll('[data-endpoint-search]').forEach(card => card.hidden = !card.dataset.endpointSearch.toLowerCase().includes(term));
 });
 
+document.addEventListener('submit', (event) => {
+  if (event.target.dataset.confirm && !window.confirm(event.target.dataset.confirm)) event.preventDefault();
+});
+
 const layout = document.querySelector('[data-endpoint]');
 if (layout) {
   let newest = Math.max(0, ...[...document.querySelectorAll('.request-row')].map(a => Number(new URL(a.href).searchParams.get('request'))));
-  setInterval(async () => {
-    if (document.hidden) return;
-    try {
-      const response = await fetch(`/api/endpoints/${layout.dataset.endpoint}/requests?after=${newest}`);
-      const rows = await response.json();
-      if (rows.length) location.reload();
-    } catch (_) { /* próxima tentativa atualiza */ }
-  }, 2500);
+  const events = new EventSource(`/api/endpoints/${layout.dataset.endpoint}/events?after=${newest}`);
+  events.addEventListener('request', (event) => {
+    const incoming = JSON.parse(event.data);
+    if (incoming.id > newest) location.reload();
+  });
 }

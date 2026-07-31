@@ -1,8 +1,8 @@
 {% extends 'base.html' %}{% block title %}Endpoints · Hookbox{% endblock %}{% block body_class %}dashboard-page{% endblock %}
 {% block content %}
 <section class="dashboard-hero">
-  <div><span class="eyebrow">VISÃO GERAL</span><h1>Seus endpoints</h1><p>Crie, monitore e inspecione seus webhooks em um só lugar.</p></div>
-  <button class="btn primary new-endpoint" data-toggle="create-endpoint">+ Novo endpoint</button>
+  <div><span class="eyebrow">VISÃO GERAL</span><h1>{{ 'Endpoints arquivados' if showing_archived else 'Seus endpoints' }}</h1><p>Crie, monitore e inspecione seus webhooks em um só lugar.</p></div>
+  <div class="hero-actions"><a class="btn dark" href="{{ url_for('dashboard') if showing_archived else url_for('dashboard', archived=1) }}">{{ 'Ver ativos' if showing_archived else 'Ver arquivados' }}</a>{% if not showing_archived %}<button class="btn primary new-endpoint" data-toggle="create-endpoint">+ Novo endpoint</button>{% endif %}</div>
 </section>
 
 <section id="create-endpoint" class="create-drawer card hidden">
@@ -22,7 +22,7 @@
   <header><div><h2>Endpoints <span>{{ endpoints|length }}</span></h2><p>URLs públicas prontas para receber qualquer requisição HTTP.</p></div>{% if endpoints %}<label class="endpoint-search">⌕ <input id="endpoint-filter" placeholder="Buscar endpoint…" autocomplete="off"></label>{% endif %}</header>
   {% if endpoints %}<div class="modern-endpoint-grid">
   {% for item in endpoints %}<a class="modern-endpoint-card" href="{{ url_for('endpoint_detail', endpoint_id=item.id) }}" data-endpoint-search="{{ item.name }} {{ item.uuid }}">
-    <div class="endpoint-card-top"><span class="active-label"><i></i> ATIVO</span><span class="open-arrow">↗</span></div>
+    <div class="endpoint-card-top"><span class="active-label"><i></i> {{ 'ARQUIVADO' if item.archived else 'ATIVO' }}{% if item.tag %} · {{ item.tag }}{% endif %}</span><span class="open-arrow">{{ '★' if item.favorite else '↗' }}</span></div>
     <div class="endpoint-identity"><span class="endpoint-icon">↯</span><div><h3>{{ item.name }}</h3><p>{{ item.request_count }} {{ 'requisição' if item.request_count == 1 else 'requisições' }}</p></div></div>
     <div class="endpoint-address"><b>POST</b><code>{{ base_url }}/hook/{{ item.uuid }}</code><button type="button" data-copy="{{ base_url }}/hook/{{ item.uuid }}" aria-label="Copiar URL">⧉</button></div>
     <footer><span><i></i> Capturando eventos</span><time>{% if item.last_request %}Última: {{ item.last_request[:16].replace('T',' ') }}{% else %}Nenhuma requisição{% endif %}</time></footer>

@@ -8,7 +8,7 @@
 <body class="{% block body_class %}{% endblock %}">
   <header class="topbar">
     <a class="brand" href="{{ url_for('dashboard') }}"><span class="logo">↯</span> Hookbox</a>
-    {% if session.user_id %}<form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn ghost">Sair</button></form>{% endif %}
+    {% if session.user_id %}<div class="account-actions">{% if current_user and current_user.is_admin %}<a class="btn ghost" href="{{ url_for('admin_dashboard') }}">Administração</a>{% endif %}<span>{{ current_user.name if current_user else '' }}</span><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn ghost">Sair</button></form></div>{% endif %}
   </header>
   <main class="container">
     {% for category, message in get_flashed_messages(with_categories=true) %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}

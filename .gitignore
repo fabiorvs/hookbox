@@ -25,6 +25,7 @@ instance/
 *.db-wal
 *.sqlite
 *.sqlite3
+backups/
 
 # Logs
 *.log
@@ -36,4 +37,3 @@ instance/
 *.swo
 .DS_Store
 Thumbs.db
-

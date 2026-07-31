@@ -9,6 +9,8 @@ class HookboxTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         os.environ["DATABASE_PATH"] = os.path.join(self.tmp.name, "test.db")
         os.environ["SECRET_KEY"] = "test-secret"
+        os.environ["ALLOW_REGISTRATION"] = "true"
+        os.environ["MAX_REQUESTS_PER_ENDPOINT"] = "500"
         import app
         self.module = importlib.reload(app)
         self.module.app.config.update(TESTING=True)
@@ -48,10 +50,29 @@ class HookboxTest(unittest.TestCase):
         self.assertIn(b'data-tab="body"', selected.data)
         self.assertIn(b'data-tab="headers"', selected.data)
         self.assertIn(b'data-tab="query"', selected.data)
+        self.assertIn(b'data-tab="cookies"', selected.data)
+        self.assertIn(b"Reenviar requisi", selected.data)
+        exported = self.client.get(f"/endpoints/{endpoint_id}/requests/1/export")
+        self.assertEqual(exported.status_code, 200)
+        self.assertIn("attachment", exported.headers["Content-Disposition"])
         self.client.post(f"/endpoints/{endpoint_id}/config", data={"csrf": self.csrf(), "name": "Pagamentos", "status": "202", "content_type": "text/plain", "body": "accepted"})
         custom = self.client.put(f"/hook/{endpoint['uuid']}", data="hello")
         self.assertEqual(custom.status_code, 202)
         self.assertEqual(custom.data, b"accepted")
+        self.assertEqual(self.client.get("/admin").status_code, 200)
+        self.assertEqual(custom.headers["X-Content-Type-Options"], "nosniff")
+
+    def test_secret_archive_and_uuid_rotation(self):
+        self.register(); self.client.get("/painel")
+        created = self.client.post("/endpoints", data={"csrf": self.csrf(), "name": "Privado"})
+        endpoint_id = int(created.location.rstrip("/").split("/")[-1])
+        self.client.post(f"/endpoints/{endpoint_id}/config", data={"csrf": self.csrf(), "name": "Privado", "status": "200", "content_type": "application/json", "body": "{}", "secret": "token-test"})
+        with self.module.app.app_context():
+            token = self.module.db().execute("SELECT uuid FROM endpoints WHERE id=?", (endpoint_id,)).fetchone()[0]
+        self.assertEqual(self.client.post(f"/hook/{token}").status_code, 401)
+        self.assertEqual(self.client.post(f"/hook/{token}", headers={"X-Hookbox-Secret": "token-test"}).status_code, 200)
+        self.client.post(f"/endpoints/{endpoint_id}/archive", data={"csrf": self.csrf()})
+        self.assertEqual(self.client.post(f"/hook/{token}", headers={"X-Hookbox-Secret": "token-test"}).status_code, 410)
 
     def test_unknown_hook_and_auth_protection(self):
         self.assertEqual(self.client.post("/hook/unknown").status_code, 404)

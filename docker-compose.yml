@@ -5,12 +5,24 @@ services:
     ports:
       - "127.0.0.1:${PORT:-8000}:8000"
     environment:
-      SECRET_KEY: ${SECRET_KEY:-troque-esta-chave-em-producao}
+      SECRET_KEY: ${SECRET_KEY:?Defina SECRET_KEY no arquivo .env}
       DATABASE_PATH: /data/webhook-box.db
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:${PORT:-8000}}
       MAX_REQUEST_BYTES: ${MAX_REQUEST_BYTES:-1048576}
+      MAX_REQUESTS_PER_ENDPOINT: ${MAX_REQUESTS_PER_ENDPOINT:-500}
+      MAX_ENDPOINTS_PER_USER: ${MAX_ENDPOINTS_PER_USER:-25}
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
     volumes:
       - webhook_data:/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   webhook_data:
