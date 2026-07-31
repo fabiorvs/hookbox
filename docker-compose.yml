@@ -1,0 +1,16 @@
+services:
+  webhook-box:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PORT:-8000}:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-troque-esta-chave-em-producao}
+      DATABASE_PATH: /data/webhook-box.db
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:${PORT:-8000}}
+      MAX_REQUEST_BYTES: ${MAX_REQUEST_BYTES:-1048576}
+    volumes:
+      - webhook_data:/data
+
+volumes:
+  webhook_data:

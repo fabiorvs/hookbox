@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block title %}{{ 'Criar conta' if mode == 'register' else 'Entrar' }} · Hookbox{% endblock %}
+{% block content %}
+<section class="auth-wrap">
+  <div class="auth-copy"><span class="eyebrow">WEBHOOKS PARA DESENVOLVIMENTO</span><h1>Capture. Inspecione.<br><em>Continue criando.</em></h1><p>URLs descartáveis para testar integrações sem expor sua aplicação.</p></div>
+  <form class="card auth-card" method="post">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <h2>{{ 'Crie sua conta' if mode == 'register' else 'Bem-vindo de volta' }}</h2>
+    {% if mode == 'register' %}<label>Nome<input name="name" required autofocus placeholder="Seu nome"></label>{% endif %}
+    <label>E-mail<input type="email" name="email" required {% if mode == 'login' %}autofocus{% endif %} placeholder="voce@empresa.com"></label>
+    <label>Senha<input type="password" name="password" minlength="8" required placeholder="Mínimo de 8 caracteres"></label>
+    <button class="btn primary full">{{ 'Começar agora' if mode == 'register' else 'Entrar no painel' }}</button>
+    <p class="form-foot">{% if mode == 'register' %}Já tem uma conta? <a href="{{ url_for('login') }}">Entrar</a>{% else %}Ainda não tem conta? <a href="{{ url_for('register') }}">Cadastre-se</a>{% endif %}</p>
+  </form>
+</section>
+{% endblock %}
+

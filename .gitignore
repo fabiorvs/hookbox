@@ -1,0 +1,39 @@
+# Variáveis locais e segredos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Bancos e arquivos de execução locais
+instance/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Editores e sistema operacional
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
