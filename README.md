@@ -40,7 +40,7 @@ O banco é criado automaticamente em `instance/webhook-box.db`. O limite padrão
 
 ## Segurança, limites e retenção
 
-O primeiro usuário cadastrado se torna administrador. Depois dele, o administrador pode consultar e bloquear usuários em `/admin`. Para fechar novos cadastros, defina `ALLOW_REGISTRATION=false`.
+O primeiro usuário cadastrado se torna administrador. Depois dele, o administrador pode consultar, bloquear usuários e redefinir suas senhas em `/admin`. A troca administrativa de senha encerra as sessões anteriores do usuário. Para fechar novos cadastros, defina `ALLOW_REGISTRATION=false`.
 
 As principais opções do `.env` são:
 

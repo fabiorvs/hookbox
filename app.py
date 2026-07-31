@@ -104,7 +104,7 @@ def init_db():
         );
     """)
     migrations = {
-        "users": {"is_admin": "INTEGER NOT NULL DEFAULT 0", "active": "INTEGER NOT NULL DEFAULT 1"},
+        "users": {"is_admin": "INTEGER NOT NULL DEFAULT 0", "active": "INTEGER NOT NULL DEFAULT 1", "session_version": "INTEGER NOT NULL DEFAULT 0"},
         "endpoints": {
             "tag": "TEXT NOT NULL DEFAULT ''", "color": "TEXT NOT NULL DEFAULT '#24d2a1'",
             "archived": "INTEGER NOT NULL DEFAULT 0", "secret": "TEXT NOT NULL DEFAULT ''",
@@ -133,6 +133,11 @@ def login_required(view):
     def wrapped(**kwargs):
         if not session.get("user_id"):
             return redirect(url_for("login", next=request.path))
+        user = db().execute("SELECT active,session_version FROM users WHERE id=?", (session["user_id"],)).fetchone()
+        if not user or not user["active"] or user["session_version"] != session.get("session_version", 0):
+            session.clear()
+            flash("Sua sessão expirou. Entre novamente.", "error")
+            return redirect(url_for("login"))
         return view(**kwargs)
     return wrapped
 
@@ -235,6 +240,7 @@ def register():
                 db().commit()
                 session.clear()
                 session["user_id"] = cursor.lastrowid
+                session["session_version"] = 0
                 audit("user.register", email, cursor.lastrowid)
                 return redirect(url_for("dashboard"))
             except sqlite3.IntegrityError:
@@ -252,6 +258,7 @@ def login():
         if user and user["active"] and check_password_hash(user["password_hash"], request.form.get("password", "")):
             session.clear()
             session["user_id"] = user["id"]
+            session["session_version"] = user["session_version"]
             audit("user.login", user["email"], user["id"])
             next_url = request.args.get("next", "")
             return redirect(next_url if next_url.startswith("/") and not next_url.startswith("//") else url_for("dashboard"))
@@ -548,8 +555,30 @@ def admin_toggle_user(user_id):
         user = db().execute("SELECT active FROM users WHERE id=?", (user_id,)).fetchone()
         if not user:
             abort(404)
-        db().execute("UPDATE users SET active=? WHERE id=?", (0 if user["active"] else 1, user_id)); db().commit()
+        db().execute("UPDATE users SET active=?,session_version=session_version+1 WHERE id=?", (0 if user["active"] else 1, user_id)); db().commit()
         audit("admin.user.toggle", str(user_id)); flash("Status do usuário alterado.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.post("/admin/users/<int:user_id>/password")
+@admin_required
+def admin_change_password(user_id):
+    require_csrf()
+    password = request.form.get("password", "")
+    user = db().execute("SELECT id,email,session_version FROM users WHERE id=?", (user_id,)).fetchone()
+    if not user:
+        abort(404)
+    if len(password) < 8:
+        flash("A nova senha deve ter ao menos 8 caracteres.", "error")
+    else:
+        new_version = user["session_version"] + 1
+        db().execute("UPDATE users SET password_hash=?,session_version=? WHERE id=?",
+                     (generate_password_hash(password), new_version, user_id))
+        db().commit()
+        audit("admin.user.password", user["email"])
+        if user_id == session["user_id"]:
+            session["session_version"] = new_version
+        flash(f"Senha de {user['email']} alterada. As sessões anteriores foram encerradas.", "success")
     return redirect(url_for("admin_dashboard"))
 
 

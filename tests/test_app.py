@@ -74,6 +74,19 @@ class HookboxTest(unittest.TestCase):
         self.client.post(f"/endpoints/{endpoint_id}/archive", data={"csrf": self.csrf()})
         self.assertEqual(self.client.post(f"/hook/{token}", headers={"X-Hookbox-Secret": "token-test"}).status_code, 410)
 
+    def test_admin_can_change_password_and_invalidate_old_login(self):
+        self.register()
+        self.client.get("/admin")
+        changed = self.client.post("/admin/users/1/password", data={"csrf": self.csrf(), "password": "nova-senha-123"})
+        self.assertEqual(changed.status_code, 302)
+        self.assertEqual(self.client.get("/admin").status_code, 200)
+        self.client.post("/sair", data={"csrf": self.csrf()})
+        self.client.get("/login")
+        old_login = self.client.post("/login", data={"csrf": self.csrf(), "email": "ada@example.com", "password": "segura123"})
+        self.assertEqual(old_login.status_code, 200)
+        new_login = self.client.post("/login", data={"csrf": self.csrf(), "email": "ada@example.com", "password": "nova-senha-123"})
+        self.assertEqual(new_login.status_code, 302)
+
     def test_unknown_hook_and_auth_protection(self):
         self.assertEqual(self.client.post("/hook/unknown").status_code, 404)
         self.assertEqual(self.client.get("/painel").status_code, 302)
